@@ -103,10 +103,26 @@ namespace Thry
                 }
                 string path = AssetDatabase.GUIDToAssetPath(guids[0]);
                 string[] data = Regex.Split(Thry.FileHelper.ReadFileIntoString(path), @"\r?\n");
-                foreach (string d in data)
+                string propertyNameBuffer = "";
+
+                // Iterate through the properties file bottom-to-top to handle property names split across multiple lines
+                foreach (string d in data.Reverse())
                 {
+                    // Ignore Commented lines
+                    if (d.StartsWith("//"))
+                        continue;
                     string[] set = Regex.Split(d, ":=");
-                    if (set.Length > 1) labels[set[0]] = set[1];
+                    if (set.Length <= 1)
+                    {
+                        propertyNameBuffer = d + propertyNameBuffer.Trim();
+                    }
+                    else
+                    {
+                        // Trim to support indentation
+                        string key = set[0].Trim();
+                        labels[key] = set[1] + propertyNameBuffer;
+                        propertyNameBuffer = "";
+                    }
                 }
             }
             return labels;
