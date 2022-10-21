@@ -743,18 +743,6 @@ namespace Thry
 #endregion
 
     #region Decorators
-    public class NoAnimateDecorator : MaterialPropertyDrawer{
-        public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
-        {
-        }
-
-        public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
-        {
-            DrawingData.LastPropertyDoesntAllowAnimation = true;
-            return 0;
-        }
-    }
-    
     public class ThrySeperatorDecorator : MaterialPropertyDrawer
     {
         Color _color = Styles.COLOR_FG;
@@ -1115,6 +1103,116 @@ namespace Thry
         {
             DrawingData.LastPropertyUsedCustomDrawer = true;
             return base.GetPropertyHeight(prop, label, editor);
+        }
+    }
+
+    public class ThryBitmaskDrawer : MaterialPropertyDrawer
+    {
+        string[] _bitLabels;
+        float[] _bitArray;
+        int _maskValue;
+        bool _foldoutExpanded = false;
+
+        // 23 mantissa bits in 32-bit float, plus one implicit from 2^n
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16, string b17, string b18, string b19, string b20, string b21, string b22, string b23, string b24 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16, string b17, string b18, string b19, string b20, string b21, string b22, string b23 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16, string b17, string b18, string b19, string b20, string b21, string b22 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16, string b17, string b18, string b19, string b20, string b21 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16, string b17, string b18, string b19, string b20 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16, string b17, string b18, string b19 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16, string b17, string b18 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16, string b17 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15, string b16 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14, string b15 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13, string b14 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12, string b13 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11, string b12 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10, string b11 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9, string b10 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9, b10 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8, string b9 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8, b9 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7, string b8 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7, b8 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6, string b7 ) : this( new string[] { b1, b2, b3, b4, b5, b6, b7 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5, string b6 ) : this( new string[] { b1, b2, b3, b4, b5, b6 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4, string b5 ) : this( new string[] { b1, b2, b3, b4, b5 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3, string b4 ) : this( new string[] { b1, b2, b3, b4 }) { }
+        public ThryBitmaskDrawer( string b1, string b2, string b3 ) : this( new string[] { b1, b2, b3 }) { }
+        public ThryBitmaskDrawer( string b1, string b2 ) : this( new string[] { b1, b2 }) { }
+        public ThryBitmaskDrawer( string b1 ) : this( new string[] { b1 }) { }
+
+        public ThryBitmaskDrawer(string[] bitLabels)
+        {
+            _bitLabels = bitLabels;
+            _bitArray = new float[bitLabels.Length];
+        }
+
+        static bool GetBit(int intValue, int bitIndex)
+        {
+            return ((intValue & (1 << (bitIndex))) >> (bitIndex) == 1);
+        }
+
+        public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+        {
+            Rect labelR   = new Rect(position);
+            labelR.height = EditorGUIUtility.singleLineHeight;
+
+            Rect contentR   = new Rect(position);
+            contentR.height = EditorGUIUtility.singleLineHeight;
+            contentR.y     += labelR.height;
+
+            EditorGUI.BeginChangeCheck();
+            int indentLevel = EditorGUI.indentLevel; // else it double indents
+            EditorGUI.indentLevel += 1;
+
+            _maskValue = (int)prop.floatValue;
+
+            labelR.width *= 0.5f;
+            _foldoutExpanded = EditorGUI.Foldout(labelR, _foldoutExpanded, label, true);
+            labelR.x += labelR.width;
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUI.TextField(labelR, Convert.ToString((uint)_maskValue, 2).PadLeft(_bitArray.Length, '0'));
+            EditorGUI.EndDisabledGroup();
+            
+            for (int i = 0; i < _bitArray.Length; i++)
+            {
+                if(_foldoutExpanded)
+                {
+                    _bitArray[i] = EditorGUI.ToggleLeft(contentR, _bitLabels[i], GetBit(_maskValue, i)) ? 1.0f : 0.0f;
+                    contentR.y += EditorGUIUtility.singleLineHeight;
+                }
+                else
+                    _bitArray[i] = GetBit(_maskValue, i) ? 1.0f : 0.0f;
+            }
+
+            EditorGUI.indentLevel = indentLevel;
+            
+            if(EditorGUI.EndChangeCheck())
+            {
+                _maskValue = 0;
+                for (int i = 0; i < _bitArray.Length; i++)
+                {
+                    _maskValue += (int)((float)Mathf.Pow(2, i) * _bitArray[i]);
+                    _bitArray[i] = 0.0f;
+                }
+
+                prop.floatValue = (float)_maskValue;
+
+                Debug.Log(Convert.ToString((uint)_maskValue, 2).PadLeft(_bitArray.Length, '0'));
+                // If edited in animation mode mark as animated (needed cause other properties isnt checked in draw)
+                if(ShaderEditor.Active.IsInAnimationMode && !ShaderEditor.Active.CurrentProperty.IsAnimated)
+                    ShaderEditor.Active.CurrentProperty.SetAnimated(true, false);
+            }
+
+            bool animated = ShaderEditor.Active.CurrentProperty.IsAnimated;
+            bool renamed = ShaderEditor.Active.CurrentProperty.IsRenaming;
+        }
+
+        public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
+        {
+            DrawingData.LastPropertyUsedCustomDrawer = true;
+            float height = base.GetPropertyHeight(prop, label, editor);
+            if (_foldoutExpanded)
+                height += EditorGUIUtility.singleLineHeight * _bitArray.Length;
+            return height;
         }
     }
 
